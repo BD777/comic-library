@@ -5,9 +5,9 @@ import App from './App'
 import router from './router'
 import store from './store'
 
-import { Button, Menu, Icon } from 'ant-design-vue'
+import { Button, Menu, Icon, Layout } from 'ant-design-vue'
 
-[Button, Menu, Icon].forEach(e => {
+[Button, Menu, Icon, Layout].forEach(e => {
   Vue.use(e)
 })
 
