@@ -78,7 +78,7 @@ export default {
     return ImageSuffix.indexOf(suffix) !== -1
   },
 
-  async getFirstImageInPath (p) {
+  async getFirstImageInPath (p) { // 递归找
     const resp = await fs.promises.readdir(p)
     console.log(resp)
     for (let i = 0; i < resp.length; ++i) {
@@ -99,6 +99,37 @@ export default {
   async fileToBlob (filepath) {
     const buf = await fs.promises.readFile(filepath)
     return new Blob([buf])
+  },
+
+  async getImageListInPath (p) { // 只在当前目录找
+    const resp = await fs.promises.readdir(p)
+    let imageList = []
+    for (let i = 0; i < resp.length; ++i) {
+      const filename = resp[i]
+      const filepath = path.join(p, filename)
+      const stat = await fs.promises.lstat(filepath)
+      if (stat.isFile()) {
+        // 读出来判断是否图片
+        // 为了性能，直接判后缀好了
+        if (this.isImageBySuffix(filename)) imageList.push(filepath)
+      }
+    }
+    return imageList
+  },
+
+  async getImageListInPathWithChapter (p) { // 读两层目录，第二层目录认为是分集
+    let images = []
+    images.push(['', await this.getImageListInPath(p)])
+    const resp = await fs.promises.readdir(p)
+    for (let i = 0; i < resp.length; ++i) {
+      const filename = resp[i]
+      const filepath = path.join(p, filename)
+      const stat = await fs.promises.lstat(filepath)
+      if (stat.isDirectory()) {
+        images.push([filename, await this.getImageListInPath(filepath)])
+      }
+    }
+    return images
   }
 
 }

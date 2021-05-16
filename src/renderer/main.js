@@ -4,15 +4,21 @@ import axios from 'axios'
 import App from './App'
 import router from './router'
 import store from './store'
+// import { VueMasonryPlugin } from 'vue-masonry'
 // import db from './datastore'
 
-import { Button, Menu, Icon, Layout, Row, Col, Input, Modal, FormModel, Select, Message, Alert, Pagination, Card, Tag, Popconfirm } from 'ant-design-vue'
+import { Switch, Button, Menu, Icon, Layout, Row, Col, Input, Modal, FormModel, Select, Message, Alert, Pagination, Card, Tag, Popconfirm, Drawer, Radio, Checkbox } from 'ant-design-vue'
 
-[Button, Menu, Icon, Layout, Row, Col, Input, Modal, FormModel, Select, Message, Alert, Pagination, Card, Tag, Popconfirm].forEach(e => {
+[Switch, Button, Menu, Icon, Layout, Row, Col, Input, Modal, FormModel, Select, Message, Alert, Pagination, Card, Tag, Popconfirm, Drawer, Radio, Checkbox].forEach(e => {
   Vue.use(e)
 })
 
+// const VueMasonryPlugin = require('vue-masonry').VueMasonryPlugin
+// console.log('???', VueMasonryPlugin)
+
 Vue.prototype.$message = Message
+
+// Vue.use(VueMasonryPlugin)
 
 if (!process.env.IS_WEB) Vue.use(require('vue-electron'))
 Vue.http = Vue.prototype.$http = axios

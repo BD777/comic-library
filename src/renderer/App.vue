@@ -4,7 +4,7 @@
       style="height: 100vh; width: 100vw;"
     >
       <a-layout-sider v-model="collapsed" collapsible>
-        <a-menu theme="dark" :default-selected-keys="['/']" mode="inline" @click="onMenuClick">
+        <a-menu theme="dark" v-model="current" :default-selected-keys="['/']" mode="inline" @click="onMenuClick">
           <a-menu-item key="/">
             <a-icon type="book" />
             <span>漫画库</span>
@@ -27,7 +27,8 @@
     name: 'comic-library',
     data () {
       return {
-        collapsed: false
+        collapsed: true,
+        current: ['/']
       }
     },
     methods: {

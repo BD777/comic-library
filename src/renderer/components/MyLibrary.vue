@@ -17,7 +17,46 @@
         </a-row>
       </a-layout-header>
       <a-layout-content class="content">
-        <div>
+        <!-- <div v-masonry transition-duration="0.3s" item-selector=".item">
+          <div v-masonry-tile class="item" v-for="comic in comics" :key="comic._id">
+            <a-card
+              hoverable
+              style="width: 240px; display: inline-block; margin: 10px; vertical-align: top;"
+            >
+              <img
+                slot="cover"
+                :alt="comic.title"
+                :src="`file://${comic.cover}`"
+              />
+              <a-card-meta>
+                <template slot="title">
+                  <span class="text-line-2" style="white-space: normal;">
+                    {{ comic.title }}
+                  </span>
+                </template>
+                <template slot="description">
+                  {{ comic.desc }}
+                </template>
+              </a-card-meta>
+              <template slot="actions" class="ant-card-actions">
+                <a-icon type="edit" @click="editComic(comic)" />
+                <a-popconfirm placement="top" ok-text="Yes" cancel-text="No" @confirm="deleteComic(comic)">
+                  <template slot="title">
+                    <p>确认删除？<span style="font-size: 0.9em; color: #888">（不会删除本地文件）</span></p>
+                  </template>
+                  <a-icon type="delete" />
+                </a-popconfirm>
+              </template>
+
+              <div style="margin-top: 10px;">
+                <a-tag color="green" v-for="tag in comic.tags" :key="tag">
+                  {{ tag }}
+                </a-tag>
+              </div>
+            </a-card>
+          </div>
+        </div> -->
+        <div class="card-box">
           <a-card
             hoverable
             style="width: 240px; display: inline-block; margin: 10px; vertical-align: top;"
@@ -28,15 +67,16 @@
               slot="cover"
               :alt="comic.title"
               :src="`file://${comic.cover}`"
+              @click="toRead(comic)"
             />
             <a-card-meta>
               <template slot="title">
-                <span class="text-line-2" style="white-space: normal;">
+                <span class="text-line-2" style="white-space: normal;" @click="toRead(comic)">
                   {{ comic.title }}
                 </span>
               </template>
               <template slot="description">
-                {{ comic.desc }}
+                <span @click="toRead(comic)">{{ comic.desc }}</span>
               </template>
             </a-card-meta>
             <template slot="actions" class="ant-card-actions">
@@ -198,7 +238,7 @@ export default {
         this.getAllTags()
       }
 
-      if (this.isEdit) { // 更新和添加复用同一个modal
+      if (!this.isEdit) { // 更新和添加复用同一个modal
         try {
           const resp = await dao.insertComic(form.path, form.title, form.author, form.desc, form.cover, form.tags)
           console.log(resp)
@@ -296,6 +336,7 @@ export default {
     },
     editComic (comic) {
       console.log('editComic', comic)
+      this.isEdit = true
       this.addForm.path = comic.path
       this.addForm.cover = comic.cover
       this.addForm.coverBlobUrl = 'file://' + comic.cover
@@ -305,6 +346,12 @@ export default {
       this.addForm.tags = comic.tags
       this.addForm.id = comic._id
       this.showAddModal = true
+    },
+    toRead (comic) {
+      this.$router.push({
+        path: '/reading',
+        query: comic
+      })
     }
   },
   mounted () {
@@ -341,5 +388,12 @@ export default {
 }
 .form-item {
   margin-bottom: 10px;
+}
+.card-box {
+  display: flex;
+  align-content: flex-start;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  flex-direction: row;
 }
 </style>
