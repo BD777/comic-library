@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "author": "windeng <mis_tletoe@foxmail.com>",
   "description": "An electron-vue project",
-  "license": null,
+  "license": "null",
   "main": "./dist/electron/main.js",
   "scripts": {
     "build": "node .electron-vue/build.js && electron-builder",
@@ -58,6 +58,7 @@
   "dependencies": {
     "ant-design-vue": "^1.7.5",
     "axios": "^0.18.0",
+    "nedb": "^1.8.0",
     "vue": "^2.5.16",
     "vue-electron": "^1.0.6",
     "vue-router": "^3.0.1",

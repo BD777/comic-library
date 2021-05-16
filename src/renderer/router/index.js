@@ -7,8 +7,13 @@ export default new Router({
   routes: [
     {
       path: '/',
-      name: 'landing-page',
-      component: require('@/components/LandingPage').default
+      name: 'my-library',
+      component: require('@/components/MyLibrary').default
+    },
+    {
+      path: '/reading',
+      name: 'reading',
+      component: require('@/components/Reading').default
     },
     {
       path: '*',
