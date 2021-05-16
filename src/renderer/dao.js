@@ -55,8 +55,33 @@ export default {
     })
   },
 
-  async getAllComicsCount () {
-    return db.meta.promises.count({})
+  genSearchComicsQuery (searchType, searchText) {
+    let query = {}
+    if (searchType && searchText) {
+      if (searchType === 'title') query.title = new RegExp(searchText)
+      else if (searchType === 'author') query.author = new RegExp(searchText)
+      else if (searchType === 'desc') query.desc = new RegExp(searchText)
+      else if (searchType === 'tags') query['tags'] = searchText
+    }
+    return query
+  },
+
+  async searchComics (searchType, searchText, current, pageSize) {
+    // start from 1
+    current = current || 1
+    pageSize = pageSize || 20
+    let query = this.genSearchComicsQuery(searchType, searchText)
+    return new Promise((resolve, reject) => {
+      db.meta.find(query).sort({ updateTime: -1 }).skip((current - 1) * pageSize).limit(pageSize).exec((err, docs) => {
+        if (err) reject(err)
+        else resolve(docs)
+      })
+    })
+  },
+
+  async getComicsCount (query) {
+    query = query || {}
+    return db.meta.promises.count(query)
   },
 
   async deleteComicById (id) {

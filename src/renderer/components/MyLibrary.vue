@@ -11,7 +11,24 @@
           </a-col>
           <a-col :span="20">
             <div style="display:flex;justify-content:center;align-items:center">
-              <a-input-search placeholder="input search text" enter-button @search="onSearch" />
+              <!-- <a-input-search placeholder="input search text" enter-button @search="onSearch" /> -->
+              <a-input-group compact>
+                <a-select v-model="search.type">
+                  <a-select-option value="title">
+                    标题
+                  </a-select-option>
+                  <a-select-option value="author">
+                    作者
+                  </a-select-option>
+                  <a-select-option value="desc">
+                    简介
+                  </a-select-option>
+                  <a-select-option value="tags">
+                    标签
+                  </a-select-option>
+                </a-select>
+                <a-input-search style="width: 50%" v-model="search.text" enter-button @search="onSearch" placeholder="搜索" />
+              </a-input-group>
             </div>
           </a-col>
         </a-row>
@@ -196,6 +213,10 @@ export default {
       allTags: [],
       hadExistedMessage: '',
 
+      search: {
+        text: '',
+        type: 'title'
+      },
       pagination: {
         current: 1,
         pageSize: 20,
@@ -211,18 +232,23 @@ export default {
       this.allTags = tags.map(d => d.tag)
     },
     async getComicList () {
-      const comics = await dao.getAllComics(this.pagination.current, this.pagination.pageSize)
+      const comics = await dao.searchComics(this.search.type, this.search.text, this.pagination.current, this.pagination.pageSize)
       console.log(comics)
       this.comics = comics
-      this.pagination.total = await dao.getAllComicsCount()
+      let query = dao.genSearchComicsQuery(this.search.type, this.search.text)
+      console.log(query)
+      this.pagination.total = await dao.getComicsCount(query)
     },
     onAddComicClick () {
       this.isEdit = false
       this.showAddModal = true
     },
     onSearch (e) {
-      console.log('onSearch', e)
-      this.$message.info('未实现')
+      console.log('onSearch', this.search)
+      this.search.text = this.search.text || this.search.text.trim()
+      // this.$message.info('未实现')
+      this.pagination.current = 1
+      this.getComicList()
     },
     async onAddOk (e) {
       console.log('onAddOk', e, this.addForm)
