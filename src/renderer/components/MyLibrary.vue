@@ -11,7 +11,6 @@
           </a-col>
           <a-col :span="20">
             <div style="display:flex;justify-content:center;align-items:center">
-              <!-- <a-input-search placeholder="input search text" enter-button @search="onSearch" /> -->
               <a-input-group compact>
                 <a-select v-model="search.type">
                   <a-select-option value="title">
@@ -34,87 +33,6 @@
         </a-row>
       </a-layout-header>
       <a-layout-content class="content">
-        <!-- <div v-masonry transition-duration="0.3s" item-selector=".item">
-          <div v-masonry-tile class="item" v-for="comic in comics" :key="comic._id">
-            <a-card
-              hoverable
-              style="width: 240px; display: inline-block; margin: 10px; vertical-align: top;"
-            >
-              <img
-                slot="cover"
-                :alt="comic.title"
-                :src="`file://${comic.cover}`"
-              />
-              <a-card-meta>
-                <template slot="title">
-                  <span class="text-line-2" style="white-space: normal;">
-                    {{ comic.title }}
-                  </span>
-                </template>
-                <template slot="description">
-                  {{ comic.desc }}
-                </template>
-              </a-card-meta>
-              <template slot="actions" class="ant-card-actions">
-                <a-icon type="edit" @click="editComic(comic)" />
-                <a-popconfirm placement="top" ok-text="Yes" cancel-text="No" @confirm="deleteComic(comic)">
-                  <template slot="title">
-                    <p>确认删除？<span style="font-size: 0.9em; color: #888">（不会删除本地文件）</span></p>
-                  </template>
-                  <a-icon type="delete" />
-                </a-popconfirm>
-              </template>
-
-              <div style="margin-top: 10px;">
-                <a-tag color="green" v-for="tag in comic.tags" :key="tag">
-                  {{ tag }}
-                </a-tag>
-              </div>
-            </a-card>
-          </div>
-        </div> -->
-
-        <!-- <waterfall :col="waterfallCol" :data="comics" :width="itemWidth" :gutterWidth="gutterWidth">
-          <a-card
-            hoverable
-            style="margin-bottom: 10px;"
-            v-for="comic in comics"
-            :key="comic._id"
-          >
-            <img
-              slot="cover"
-              :alt="comic.title"
-              :src="`file://${comic.cover}`"
-              @click="toRead(comic)"
-            />
-            <a-card-meta>
-              <template slot="title">
-                <span class="text-line-2" style="white-space: normal;" @click="toRead(comic)">
-                  {{ comic.title }}
-                </span>
-              </template>
-              <template slot="description">
-                <span @click="toRead(comic)">{{ comic.desc }}</span>
-              </template>
-            </a-card-meta>
-            <template slot="actions" class="ant-card-actions">
-              <a-icon type="edit" @click="editComic(comic)" />
-              <a-popconfirm placement="top" ok-text="Yes" cancel-text="No" @confirm="deleteComic(comic)">
-                <template slot="title">
-                  <p>确认删除？<span style="font-size: 0.9em; color: #888">（不会删除本地文件）</span></p>
-                </template>
-                <a-icon type="delete" />
-              </a-popconfirm>
-            </template>
-
-            <div style="margin-top: 10px;">
-              <a-tag color="green" v-for="tag in comic.tags" :key="tag">
-                {{ tag }}
-              </a-tag>
-            </div>
-          </a-card>
-        </waterfall> -->
-        
         <Waterfall
          :list="comics"
          :gutter="10"
@@ -157,46 +75,6 @@
           </template>
         </Waterfall>
 
-        <!-- <div class="card-box">
-          <a-card
-            hoverable
-            style="width: 240px; display: inline-block; margin: 5px; vertical-align: top;"
-            v-for="comic in comics"
-            :key="comic._id"
-          >
-            <img
-              slot="cover"
-              :alt="comic.title"
-              :src="`file://${comic.cover}`"
-              @click="toRead(comic)"
-            />
-            <a-card-meta>
-              <template slot="title">
-                <span class="text-line-2" style="white-space: normal;" @click="toRead(comic)">
-                  {{ comic.title }}
-                </span>
-              </template>
-              <template slot="description">
-                <span @click="toRead(comic)">{{ comic.desc }}</span>
-              </template>
-            </a-card-meta>
-            <template slot="actions" class="ant-card-actions">
-              <a-icon type="edit" @click="editComic(comic)" />
-              <a-popconfirm placement="top" ok-text="Yes" cancel-text="No" @confirm="deleteComic(comic)">
-                <template slot="title">
-                  <p>确认删除？<span style="font-size: 0.9em; color: #888">（不会删除本地文件）</span></p>
-                </template>
-                <a-icon type="delete" />
-              </a-popconfirm>
-            </template>
-
-            <div style="margin-top: 10px;">
-              <a-tag color="green" v-for="tag in comic.tags" :key="tag">
-                {{ tag }}
-              </a-tag>
-            </div>
-          </a-card>
-        </div> -->
         <a-pagination
           style="margin: 10px; float: right;"
           v-model="pagination.current"
