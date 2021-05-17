@@ -73,10 +73,11 @@
             </a-card>
           </div>
         </div> -->
-        <div class="card-box">
+
+        <!-- <waterfall :col="waterfallCol" :data="comics" :width="itemWidth" :gutterWidth="gutterWidth">
           <a-card
             hoverable
-            style="width: 240px; display: inline-block; margin: 10px; vertical-align: top;"
+            style="margin-bottom: 10px;"
             v-for="comic in comics"
             :key="comic._id"
           >
@@ -112,12 +113,96 @@
               </a-tag>
             </div>
           </a-card>
-        </div>
+        </waterfall> -->
+        
+        <Waterfall
+         :list="comics"
+         :gutter="10"
+         :width="240"
+         :breakpoints="{
+            4000: { //当屏幕宽度小于等于1200
+              rowPerView: 10,
+            },
+            2200: { //当屏幕宽度小于等于1200
+              rowPerView: 8,
+            },
+            1600: { //当屏幕宽度小于等于1200
+              rowPerView: 6,
+            },
+            1200: { //当屏幕宽度小于等于1200
+              rowPerView: 4,
+            },
+            800: { //当屏幕宽度小于等于800
+              rowPerView: 3,
+            },
+            500: { //当屏幕宽度小于等于500
+              rowPerView: 2,
+            },
+            300: { //当屏幕宽度小于等于500
+              rowPerView: 1,
+            }
+          }"
+          backgroundColor="none"
+          ref="waterfall"
+        >
+          <template slot="item" slot-scope="comic">
+            <ComicCard
+             :comic="comic.data"
+             editable
+             deletable
+             @edit="editComic"
+             @click="toRead"
+             @delete="deleteComic"
+            />
+          </template>
+        </Waterfall>
+
+        <!-- <div class="card-box">
+          <a-card
+            hoverable
+            style="width: 240px; display: inline-block; margin: 5px; vertical-align: top;"
+            v-for="comic in comics"
+            :key="comic._id"
+          >
+            <img
+              slot="cover"
+              :alt="comic.title"
+              :src="`file://${comic.cover}`"
+              @click="toRead(comic)"
+            />
+            <a-card-meta>
+              <template slot="title">
+                <span class="text-line-2" style="white-space: normal;" @click="toRead(comic)">
+                  {{ comic.title }}
+                </span>
+              </template>
+              <template slot="description">
+                <span @click="toRead(comic)">{{ comic.desc }}</span>
+              </template>
+            </a-card-meta>
+            <template slot="actions" class="ant-card-actions">
+              <a-icon type="edit" @click="editComic(comic)" />
+              <a-popconfirm placement="top" ok-text="Yes" cancel-text="No" @confirm="deleteComic(comic)">
+                <template slot="title">
+                  <p>确认删除？<span style="font-size: 0.9em; color: #888">（不会删除本地文件）</span></p>
+                </template>
+                <a-icon type="delete" />
+              </a-popconfirm>
+            </template>
+
+            <div style="margin-top: 10px;">
+              <a-tag color="green" v-for="tag in comic.tags" :key="tag">
+                {{ tag }}
+              </a-tag>
+            </div>
+          </a-card>
+        </div> -->
         <a-pagination
           style="margin: 10px; float: right;"
           v-model="pagination.current"
           :total="pagination.total"
           :show-total="(total, range) => `${range[0]}-${range[1]} of ${total} items`"
+          @change="getComicList"
         />
       </a-layout-content>
     </a-layout>
@@ -178,6 +263,9 @@
 </template>
 
 <script>
+import Waterfall from '../thirdparty-lib/vue-waterfall-plugin/Waterfall'
+import ComicCard from './ComicCard.vue'
+
 const path = require('path')
 const { remote } = require('electron')
 const utils = require('../utils').default
@@ -185,7 +273,10 @@ const dao = require('../dao').default
 
 export default {
   name: 'my-library',
-  components: {},
+  components: {
+    Waterfall,
+    ComicCard
+  },
   data () {
     return {
       showAddModal: false,
@@ -222,10 +313,28 @@ export default {
         pageSize: 20,
         total: 0
       },
-      comics: []
+      comics: [],
+
+      itemWidth: 240,
+      gutterWidth: 10,
+      waterfallCol: 4
     }
   },
+  computed: {
+  },
   methods: {
+    calcWaterfallCol () {
+      // console.log('waterfallCol computer', document.documentElement.clientWidth)
+      const maxCol = 10
+      for (let i = 1; i <= maxCol; ++i) {
+        let width = i * this.itemWidth + (i - 1) * this.gutterWidth + 20 + 17 + 70 // 滚动条？再留点buffer好了
+        if (width > document.documentElement.clientWidth) {
+          if (i === 1) return i
+          else return i - 1
+        }
+      }
+      return maxCol
+    },
     async getAllTags () {
       const tags = await dao.getAllTags()
       console.log(tags)
@@ -380,10 +489,20 @@ export default {
       })
     }
   },
-  mounted () {
+  async mounted () {
     console.log('MyLibrary mounted', process.versions, utils)
-    this.getAllTags()
-    this.getComicList()
+    await this.getAllTags()
+    await this.getComicList()
+
+    // window.onresize = () => {
+    //   this.waterfallCol = this.calcWaterfallCol()
+    // }
+    // this.waterfallCol = this.calcWaterfallCol()
+  },
+  watch: {
+    // waterfallCol (to, from) {
+    //   this.$waterfall.forceUpdate()
+    // }
   }
 }
 </script>

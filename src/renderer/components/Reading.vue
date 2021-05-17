@@ -6,28 +6,28 @@
         <div ref="image-box" style="width: inherit; height: inherit;">
           <template v-if="comicSetting.readingMode === 'single'">
             <div style="display:flex;justify-content:center;align-items:center;height:inherit;">
-              <img v-if="current.index < current.images.length" :src="current.images[current.index]" class="image-single-mode" />
+              <img v-if="current.index < current.images.length" v-lazy="current.images[current.index]" class="image-single-mode" />
             </div>
           </template>
           <template v-else-if="comicSetting.readingMode === 'left-right'">
             <div style="display:flex;justify-content:center;align-items:center;height:inherit;">
               <template v-if="current.index === 0 && comicSetting.firstPageEmpty">
-                <img v-if="current.index < current.images.length" :src="current.images[current.index]" class="image-single-mode" />
+                <img v-if="current.index < current.images.length" v-lazy="current.images[current.index]" class="image-single-mode" />
               </template>
               <template v-else>
-                <img v-if="current.index < current.images.length" :src="current.images[current.index]" class="image-double-mode" />
-                <img v-if="current.index + 1 < current.images.length" :src="current.images[current.index + 1]" class="image-double-mode" />
+                <img v-if="current.index < current.images.length" v-lazy="current.images[current.index]" class="image-double-mode" />
+                <img v-if="current.index + 1 < current.images.length" v-lazy="current.images[current.index + 1]" class="image-double-mode" />
               </template>
             </div>
           </template>
           <template v-else-if="comicSetting.readingMode === 'right-left'">
             <div style="display:flex;justify-content:center;align-items:center;height:inherit;">
               <template v-if="current.index === 0 && comicSetting.firstPageEmpty">
-                <img v-if="current.index < current.images.length" :src="current.images[current.index]" class="image-single-mode" />
+                <img v-if="current.index < current.images.length" v-lazy="current.images[current.index]" class="image-single-mode" />
               </template>
               <template v-else>
-                <img v-if="current.index + 1 < current.images.length" :src="current.images[current.index + 1]" class="image-double-mode" />
-                <img v-if="current.index < current.images.length" :src="current.images[current.index]" class="image-double-mode" />
+                <img v-if="current.index + 1 < current.images.length" v-lazy="current.images[current.index + 1]" class="image-double-mode" />
+                <img v-if="current.index < current.images.length" v-lazy="current.images[current.index]" class="image-double-mode" />
               </template>
             </div>
           </template>
@@ -36,7 +36,7 @@
               <img
                 v-for="(src, i) in current.images"
                 :key="src"
-                :src="src"
+                v-lazy="src"
                 width="80%"
                 :ref="`scroll-image-${i}`"
               />
@@ -49,7 +49,7 @@
           <img
             v-for="(src, i) in current.images"
             :key="src"
-            :src="src"
+            v-lazy="src"
             :ref="`preview-image-${i}`"
             width="100%"
             :class="`image-preview ${i === current.index ? 'active' : 'inactive'}`"
@@ -104,6 +104,12 @@
        @click="onChapterClick(d, i)"
       >
        {{ d[0] === '' ? '[默认]' : d[0] }}
+       <span
+        style="font-size: 0.9em;"
+        :class="`chapter-item ${d[0] === current.chapterName ? 'chapter-active' : ''}`"
+       >
+        [{{ d[1].length }}P]
+       </span>
       </p>
     </a-drawer>
   </div>
@@ -141,11 +147,7 @@ export default {
   methods: {
     async getImageListInPathWithChapter () {
       this.fullImages = await utils.getImageListInPathWithChapter(this.comic.path)
-      console.log('images', this.fullImages)
-      if (this.fullImages.length > 0 && !this.current.chapterName) {
-        this.current.chapterName = this.fullImages[0][0]
-        this.current.images = this.fullImages[0][1]
-      }
+      // console.log('images', this.fullImages)
     },
     async getComicSetting () {
       this.comicSetting = await dao.getComicSetting(this.comic._id)
@@ -289,6 +291,17 @@ export default {
     await this.getImageListInPathWithChapter()
     await this.getComicSetting()
     this.bindEvents()
+
+    if (!this.current.chapterName) {
+      for (let i = 0; i < this.fullImages.length; ++i) {
+        const d = this.fullImages[i]
+        if (d[1].length > 0) {
+          this.current.chapterName = d[0]
+          this.current.images = d[1]
+          break
+        }
+      }
+    }
   },
   watch: {
     'current.index' (to, from) {

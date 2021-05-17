@@ -13,6 +13,10 @@
             <a-icon type="read" />
             <span>正在浏览</span>
           </a-menu-item>
+          <a-menu-item key="/site-rules">
+            <a-icon type="unordered-list" />
+            <span>网页规则</span>
+          </a-menu-item>
         </a-menu>
       </a-layout-sider>
       <a-layout-content>

@@ -27,7 +27,15 @@
  - mac安装包：~~我没设备编不了...~~
 
 
+## TODO
+ - 浏览页懒加载
+ - 列表页改为瀑布流
+ - 激动人心的通用规则要开始搞了，先参照[Yealico的规则](https://yealico.wordpress.com/site-rule-wiki/)，对于特殊情况再修补
+ 
+
 ## 感谢前人的技术
  - 脚手架 [electron-vue](https://github.com/SimulatedGREG/electron-vue)
  - UI库 [Ant Design of Vue](https://antdv.com/docs/vue/introduce-cn/)
+ - Vue 瀑布流组件 [vue-waterfall-plugin](https://github.com/heikaimu/vue-waterfall-plugin)  # 因放在node_modules使用失败，拷贝了一份。~~对webpack还是不太熟悉，他日再学~~
  - The JavaScript Database [nedb](https://github.com/louischatriot/nedb)
+ - 通用规则参考，Site Rule [Yealico的规则](https://yealico.wordpress.com/site-rule-wiki/)

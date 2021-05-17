@@ -6,12 +6,22 @@ import router from './router'
 import store from './store'
 // import { VueMasonryPlugin } from 'vue-masonry'
 // import db from './datastore'
+import VueLazyload from 'vue-lazyload'
+// import waterfall from 'vue-waterfall2'
 
 import { Switch, Button, Menu, Icon, Layout, Row, Col, Input, Modal, FormModel, Select, Message, Alert, Pagination, Card, Tag, Popconfirm, Drawer, Radio, Checkbox } from 'ant-design-vue'
 
 [Switch, Button, Menu, Icon, Layout, Row, Col, Input, Modal, FormModel, Select, Message, Alert, Pagination, Card, Tag, Popconfirm, Drawer, Radio, Checkbox].forEach(e => {
   Vue.use(e)
 })
+
+Vue.use(VueLazyload, {
+  preLoad: 1.3,
+  loading: require('@/assets/Spinner-1s-800px.gif'),
+  attempt: 2
+})
+
+// Vue.use(waterfall)
 
 // const VueMasonryPlugin = require('vue-masonry').VueMasonryPlugin
 // console.log('???', VueMasonryPlugin)
