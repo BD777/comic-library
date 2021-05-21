@@ -22,6 +22,11 @@ db.tags = new Datastore({ // 标签
   filename: path.join(root, '/tags.db')
 })
 
+db.siteRules = new Datastore({ // 网页规则
+  autoload: true,
+  filename: path.join(root, '/siteRules.db')
+})
+
 // promisify
 const funcs = ['find', 'ensureIndex', 'removeIndex', 'insert', 'count', 'remove', 'update']
 for (let key in db) {

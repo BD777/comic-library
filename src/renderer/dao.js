@@ -3,6 +3,7 @@ import db from './datastore'
 // 增加索引
 db.tags.promises.ensureIndex({ fieldName: 'tag', unique: true })
 db.meta.promises.ensureIndex({ fieldName: 'path', unique: true })
+db.siteRules.promises.ensureIndex({ fieldName: 'name', unique: true })
 
 export default {
   // 这里统一做dao方法
@@ -127,5 +128,28 @@ export default {
       index: index
     }
     return db.setting.update({ comicId: comicId }, { $set: data }, { upsert: true })
+  },
+
+  async insertSiteRule (site) {
+    return db.siteRules.promises.insert(site)
+  },
+
+  async updateSiteById (id, site) {
+    delete site._id
+    return db.siteRules.update({ _id: id }, { $set: site })
+  },
+
+  async getSiteRuleByName (name) {
+    return db.siteRules.promises.find({ name: name })
+  },
+
+  async getSiteList () {
+    return new Promise((resolve, reject) => {
+      db.siteRules.find({}).sort({ updateTime: -1 }).exec((err, docs) => {
+        if (err) reject(err)
+        else resolve(docs)
+      })
+    })
   }
+
 }

@@ -21,6 +21,11 @@ export default new Router({
       component: require('@/components/SiteRules').default
     },
     {
+      path: '/site-rules-detail',
+      name: 'site-rules-detail',
+      component: require('@/components/SiteRulesDetail').default
+    },
+    {
       path: '*',
       redirect: '/'
     }

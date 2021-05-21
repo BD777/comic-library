@@ -15,7 +15,7 @@
           </a-menu-item>
           <a-menu-item key="/site-rules">
             <a-icon type="unordered-list" />
-            <span>网页规则</span>
+            <span>在线漫画</span>
           </a-menu-item>
         </a-menu>
       </a-layout-sider>

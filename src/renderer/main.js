@@ -9,9 +9,9 @@ import store from './store'
 import VueLazyload from 'vue-lazyload'
 // import waterfall from 'vue-waterfall2'
 
-import { Switch, Button, Menu, Icon, Layout, Row, Col, Input, Modal, FormModel, Select, Message, Alert, Pagination, Card, Tag, Popconfirm, Drawer, Radio, Checkbox } from 'ant-design-vue'
+import { Dropdown, Divider, List, Tabs, PageHeader, Switch, Button, Menu, Icon, Layout, Row, Col, Input, Modal, FormModel, Select, Message, Alert, Pagination, Card, Tag, Popconfirm, Drawer, Radio, Checkbox } from 'ant-design-vue'
 
-[Switch, Button, Menu, Icon, Layout, Row, Col, Input, Modal, FormModel, Select, Message, Alert, Pagination, Card, Tag, Popconfirm, Drawer, Radio, Checkbox].forEach(e => {
+[Dropdown, Divider, List, Tabs, PageHeader, Switch, Button, Menu, Icon, Layout, Row, Col, Input, Modal, FormModel, Select, Message, Alert, Pagination, Card, Tag, Popconfirm, Drawer, Radio, Checkbox].forEach(e => {
   Vue.use(e)
 })
 
