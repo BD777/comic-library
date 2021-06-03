@@ -96,6 +96,11 @@ export default {
   },
   mounted () {
 
+  },
+  watch: {
+    value (to, from) {
+      // console.log('SiteRuleBasicFormCard watch value', to, from)
+    }
   }
 }
 </script>

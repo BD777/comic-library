@@ -33,50 +33,19 @@
         </a-row>
       </a-layout-header>
       <a-layout-content class="content">
-        <Waterfall
-         :list="comics"
-         :gutter="10"
-         :width="240"
-         :breakpoints="{
-            4000: { //当屏幕宽度小于等于1200
-              rowPerView: 10,
-            },
-            2200: { //当屏幕宽度小于等于1200
-              rowPerView: 8,
-            },
-            1600: { //当屏幕宽度小于等于1200
-              rowPerView: 6,
-            },
-            1200: { //当屏幕宽度小于等于1200
-              rowPerView: 4,
-            },
-            800: { //当屏幕宽度小于等于800
-              rowPerView: 3,
-            },
-            500: { //当屏幕宽度小于等于500
-              rowPerView: 2,
-            },
-            300: { //当屏幕宽度小于等于500
-              rowPerView: 1,
-            }
-          }"
-          backgroundColor="none"
-          ref="waterfall"
-        >
-          <template slot="item" slot-scope="comic">
-            <ComicCard
-             :comic="comic.data"
-             editable
-             deletable
-             @edit="editComic"
-             @click="toRead"
-             @delete="deleteComic"
-            />
-          </template>
-        </Waterfall>
+
+        <comic-card-list
+         style="margin: 10px;"
+         :comics="comics"
+         editable
+         deletable
+         @edit="editComic"
+         @click="toRead"
+         @delete="deleteComic"
+        />
 
         <a-pagination
-          style="margin: 10px; float: right;"
+          style="margin: 10px;"
           v-model="pagination.current"
           :total="pagination.total"
           :show-total="(total, range) => `${range[0]}-${range[1]} of ${total} items`"
@@ -141,8 +110,8 @@
 </template>
 
 <script>
-import Waterfall from '../thirdparty-lib/vue-waterfall-plugin/Waterfall'
 import ComicCard from './ComicCard.vue'
+import ComicCardList from './ComicCardList.vue'
 
 const path = require('path')
 const { remote } = require('electron')
@@ -152,7 +121,7 @@ const dao = require('../dao').default
 export default {
   name: 'my-library',
   components: {
-    Waterfall,
+    ComicCardList,
     ComicCard
   },
   data () {
@@ -253,7 +222,17 @@ export default {
 
       if (!this.isEdit) { // 更新和添加复用同一个modal
         try {
-          const resp = await dao.insertComic(form.path, form.title, form.author, form.desc, form.cover, form.tags)
+          const resp = await dao.insertComic(
+            form.path,
+            form.title,
+            form.author,
+            form.desc,
+            form.cover,
+            form.tags.map(tag => {
+              return { name: tag }
+            }),
+            []
+          )
           console.log(resp)
           this.$message.success(`添加成功：${form.title}`)
           onSuccess()
@@ -297,7 +276,7 @@ export default {
     async selectPath () {
       console.log('selectPath')
 
-      const result = await await remote.dialog.showOpenDialog({
+      const result = await remote.dialog.showOpenDialog({
         properties: ['openDirectory']
       })
       if (!result) return
@@ -362,7 +341,7 @@ export default {
     },
     toRead (comic) {
       this.$router.push({
-        path: '/reading',
+        path: '/reading-local',
         query: comic
       })
     }

@@ -2,6 +2,15 @@
   <div>
     <a-layout>
       <a-layout-content :style="{ background: '#262626', height: '100vh', 'text-align': 'center' }">
+        <a-progress
+         type="circle"
+         :percent="progress.percent"
+         class="loading-process"
+         :width="70"
+         :strokeWidth="9"
+         :format="percent => `${progress.current} / ${progress.total}`"
+         v-if="progress.show"
+        />
         <!-- 这里要分不同的阅读方式：双页（左右/右左）、单页、滚动，以及双页情况下首页是否空白 -->
         <div ref="image-box" style="width: inherit; height: inherit;">
           <template v-if="comicSetting.readingMode === 'single'">
@@ -98,29 +107,24 @@
       @close="drawerVisible = false"
     >
       <p
-       v-for="(d, i) in fullImages"
-       :key="d[0]"
-       :class="`chapter-item ${d[0] === current.chapterName ? 'chapter-active' : ''}`"
+       v-for="(d, i) in comicDetail.chapterConfig"
+       :key="i"
+       :class="`chapter-item ${d.title === current.chapterName ? 'chapter-active' : ''}`"
        @click="onChapterClick(d, i)"
       >
-       {{ d[0] === '' ? '[默认]' : d[0] }}
-       <span
-        style="font-size: 0.9em;"
-        :class="`chapter-item ${d[0] === current.chapterName ? 'chapter-active' : ''}`"
-       >
-        [{{ d[1].length }}P]
-       </span>
+       {{ d.title }}
       </p>
     </a-drawer>
   </div>
 </template>
 
 <script>
+const parser = require('../parser/index').default
 const utils = require('../utils').default
 const dao = require('../dao').default
 
 export default {
-  name: 'reading',
+  name: 'reading-online',
   components: {},
   data () {
     return {
@@ -133,7 +137,6 @@ export default {
         chapterName: '',
         index: 0 // 当前浏览到的下标
       },
-      fullImages: [],
 
       current: {
         chapterName: '',
@@ -141,24 +144,33 @@ export default {
         index: 0 // 当前浏览到的下标
       },
 
-      drawerVisible: false
+      drawerVisible: false,
+
+      // 这里做本地和在线相统一，默认本地，可以切换为在线
+      siteId: '', // 在线，如有
+      site: {}, // 根据上面siteId拿到的，如有
+      idCode: '', // 当前在线漫画的idCode
+      localId: '', // 本地
+
+      chapter: {}, // 所选章节
+      comicDetail: {}, // 漫画详情
+      // comicBrowse: [], // 漫画内容，图片之类的 // 直接设置到current.images里
+      progress: {
+        show: true,
+        total: 0,
+        current: 0,
+        percent: 0
+      },
+
+      globalSetting: {}
     }
   },
   methods: {
-    async getImageListInPathWithChapter () {
-      this.fullImages = await utils.getImageListInPathWithChapter(this.comic.path)
-      // console.log('images', this.fullImages)
-    },
     async getComicSetting () {
       this.comicSetting = await dao.getComicSetting(this.comic._id)
       console.log('comicSetting', this.comicSetting)
-      if (this.comicSetting.chapterName) {
+      if (this.comicSetting.chapterName && !this.current.chapterName) {
         this.current.chapterName = this.comicSetting.chapterName
-        this.fullImages.forEach(d => {
-          if (d[0] === this.current.chapterName) {
-            this.current.images = d[1]
-          }
-        })
       }
       if (this.comicSetting.index) this.current.index = this.comicSetting.index
     },
@@ -240,7 +252,7 @@ export default {
       })
     },
     onReadingModeChange () {
-      dao.updateComicReadingMode(this.comic._id, this.comicSetting.readingMode, this.comicSetting.firstPageEmpty)
+      // dao.updateComicReadingMode(this.comic._id, this.comicSetting.readingMode, this.comicSetting.firstPageEmpty)
       if (this.comicSetting.readingMode === 'scroll') {
         setTimeout(() => {
           let elem = this.$refs[`scroll-image-${this.current.index}`]
@@ -252,7 +264,7 @@ export default {
     onFirstPageEmptyChange () {
       if (this.comicSetting.firstPageEmpty && ((this.current.index & 1) === 0) && this.current.index !== 0) --this.current.index
       else if (!this.comicSetting.firstPageEmpty && (this.current.index & 1) && this.current.index + 1 < this.current.images.length) ++this.current.index
-      dao.updateComicReadingMode(this.comic._id, this.comicSetting.readingMode, this.comicSetting.firstPageEmpty)
+      // dao.updateComicReadingMode(this.comic._id, this.comicSetting.readingMode, this.comicSetting.firstPageEmpty)
     },
     scrollHandle (elem) {
       const offset = elem.getBoundingClientRect() // vue中，使用this.$el获取当前组件的根元素
@@ -272,36 +284,152 @@ export default {
     },
     onChapterClick (d, index) {
       console.log('onChapterClick', d, index)
-      this.current.images = d[1]
-      this.current.chapterName = d[0]
+      this.chapter = d
+      this.current.images = []
+      if (this.chapter) {
+        this.current.chapterName = this.chapter.title
+      }
+      if (!this.current.images || this.current.images.length === 0) {
+        this.getOnlineBrowse()
+      }
+
       this.current.index = 0
       this.drawerVisible = false
+
+      // this.$router.replace({
+      //   path: '/reading-online',
+      //   query: {
+      //     siteId: this.siteId, // if online comic
+      //     comicDetail: JSON.stringify(this.comicDetail),
+      //     chapter: JSON.stringify(d)
+      //   }
+      // })
+    },
+    // new things
+    async getOnlineBrowse () {
+      console.log('now getOnlineBrowse', this.chapter.idCode)
+      this.current.images = []
+      this.progress.show = true
+      this.progress.current = 0
+      this.progress.total = 0
+      this.progress.percent = 0
+      let page = 1
+      while (true) {
+        const resp = await parser.getBrowse(this.chapter.idCode, page)
+        console.log('getOnlineBrowse resp', resp, page)
+        if (resp.length === 0) break
+        const currentLength = this.current.images.length
+        this.progress.total = currentLength + resp.length
+        for (let i = 0; i < resp.length; ++i) {
+          this.current.images[currentLength + i] = await utils.downloadComicImage(
+            this.globalSetting.savePath,
+            this.site.name,
+            this.comicDetail.title,
+            this.chapter.title,
+            resp[i].image,
+            currentLength + i
+          )
+          ++this.progress.current
+          this.progress.percent = parseInt(this.progress.current / this.progress.total * 100)
+        }
+        // this.comicBrowse = this.comicBrowse.concat(resp)
+        ++page
+      }
+      this.progress.percent = 100
+      localStorage.setItem('onlineReadingComicBrowse', JSON.stringify(this.current.images))
+      console.log('comicBrowse load done', this.current.images)
+      setTimeout(() => {
+        this.progress.show = false
+      }, 1000)
+    },
+    async initFromQueryOrCache () {
+      const keys = ['localId', 'siteId', 'chapter', 'comicDetail', 'idCode']
+      const keysShouldParse = { 'chapter': 1, 'comicDetail': 1, 'comicBrowse': 1 }
+      const query = this.$route.query
+      if (!query.localId && !query.siteId) {
+        // read from cache
+        const cache = JSON.parse(localStorage.getItem('onlineReadingComic') || '{}')
+        const comicBrowseCache = JSON.parse(localStorage.getItem('onlineReadingComicBrowse') || '[]')
+        for (let key of keys) {
+          if (cache[key]) this[key] = cache[key]
+        }
+        if (comicBrowseCache.length > 0) this.current.images = comicBrowseCache
+      } else {
+        for (let key of keys) {
+          if (query[key]) this[key] = key in keysShouldParse ? JSON.parse(query[key]) : query[key]
+        }
+        if (this.siteId) {
+          const resp = await dao.getSiteRuleById(this.siteId)
+          if (resp.length > 0) {
+            this.site = resp[0]
+            parser.setSite(this.site)
+          }
+        }
+        if (!this.current.images || this.current.images.length === 0) {
+          this.getOnlineBrowse()
+        }
+        let data = {}
+        for (let key of keys) {
+          if (this[key]) data[key] = this[key]
+        }
+        localStorage.setItem('onlineReadingComic', JSON.stringify(data))
+      }
+    },
+    async insertComicAsLocal () {
+      if (!this.site || !this.site.name) return
+      const title = utils.genComicName(this.site.name, this.comicDetail.title)
+      let p = await utils.tryMkdir([this.globalSetting.savePath, title])
+      const comics = await dao.getComicByPath(p)
+      if (!comics || comics.length === 0) {
+        const resp = await dao.insertComic(
+          p,
+          title,
+          this.comicDetail.author,
+          this.comicDetail.intro,
+          this.comicDetail.cover,
+          this.comicDetail.tagConfig,
+          this.comicDetail.imageConfig,
+          this.siteId,
+          this.idCode
+        )
+        const comics = await dao.getComicByPath(p)
+        this.comic = comics[0]
+        return resp
+      } else {
+        this.comic = comics[0]
+        // this.comic.title = this.comicDetail.title
+        // this.comic.author = this.comicDetail.author
+        // this.comic.intro = this.comicDetail.intro
+        // this.comic.cover = this.comicDetail.cover
+        // this.comic.tagConfig = this.comicDetail.tagConfig
+        // this.comic.imageConfig = this.comicDetail.imageConfig
+        // this.comic.siteId = this.siteId
+        // this.comic.idCode = this.idCode
+        // return dao.updateComicById(this.comic._id, this.comic)
+      }
+    },
+    async init () {
+      this.globalSetting = await dao.getGlobalSetting()
+      await this.initFromQueryOrCache()
+      if (this.comicDetail.cover && this.comicDetail.cover.search('http') === 0) {
+        // 下载到本地
+        this.comicDetail.cover = await utils.downloadComicCover(this.globalSetting.savePath, this.site.name, this.comicDetail.title, this.comicDetail.cover)
+      }
+      if (this.chapter) {
+        this.current.chapterName = this.chapter.title
+      }
+      console.log('siteId', this.siteId)
+      console.log('chapter', this.chapter)
+      console.log('comicDetail', this.comicDetail)
+      console.log('comicBrowse', this.current.images)
+      await this.insertComicAsLocal()
+      await this.getComicSetting()
+      this.bindEvents()
     }
   },
   async mounted () {
     console.log('Reading mounted', this.$route)
-    if (this.$route.query._id) {
-      localStorage.setItem('readingComic', JSON.stringify(this.$route.query))
-      this.comic = this.$route.query
-    } else {
-      this.comic = JSON.parse(localStorage.getItem('readingComic')) // 时间类好像会挂掉
-    }
-    console.log('Reading Comic', this.comic)
-
-    await this.getImageListInPathWithChapter()
-    await this.getComicSetting()
-    this.bindEvents()
-
-    if (!this.current.chapterName) {
-      for (let i = 0; i < this.fullImages.length; ++i) {
-        const d = this.fullImages[i]
-        if (d[1].length > 0) {
-          this.current.chapterName = d[0]
-          this.current.images = d[1]
-          break
-        }
-      }
-    }
+    await this.init()
   },
   watch: {
     'current.index' (to, from) {
@@ -323,11 +451,9 @@ export default {
     },
     'current.chapterName' (to, from) {
       dao.updateComicReadingProccess(this.comic._id, this.current.chapterName, this.current.index)
-      this.fullImages.forEach(d => {
-        if (d[0] === this.current.chapterName) {
-          this.current.images = d[1]
-        }
-      })
+    },
+    async $route () {
+      await this.init()
     }
   }
 }
@@ -382,5 +508,12 @@ export default {
 }
 .chapter-active {
   color:steelblue;
+}
+.loading-process {
+  position: fixed;
+  top: 20px;
+  right: 50px;
+  z-index: 3;
+  /* background-color: rgba(255, 255, 255, 0.3); */
 }
 </style>

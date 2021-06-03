@@ -1,12 +1,17 @@
 const fs = require('fs')
 const path = require('path')
+const requests = require('./requests').default
 
 // promisify
 fs.promises = {}
 const funcs = [
   'lstat',
   'readdir',
-  'readFile'
+  'readFile',
+  'open',
+  'write',
+  'writeFile',
+  'mkdir'
 ]
 funcs.forEach(func => {
   fs.promises[func] = (...args) => {
@@ -19,9 +24,11 @@ funcs.forEach(func => {
   }
 })
 
-const ImageSuffix = ['jpg', 'jpeg', 'png', 'bmp', 'gif']
+const ImageSuffix = ['jpg', 'jpeg', 'png', 'bmp', 'gif', 'webp']
 
 export default {
+
+  fs: fs,
 
   getImageSuffix (fileBuffer) {
     // 将上文提到的 文件标识头 按 字节 整理到数组中
@@ -130,6 +137,167 @@ export default {
       }
     }
     return images
+  },
+
+  async tryMkdir (pathList) {
+    let resp = '.'
+    for (const p of pathList) {
+      resp = path.resolve(path.join(resp, p))
+      try {
+        await fs.promises.mkdir(resp)
+      } catch (e) {
+        // console.warn(`mkdir ${resp} fail with ${e}`)
+      }
+    }
+    return resp
+  },
+
+  async downloadImage (url, savePath, filename) {
+    console.log('downloadImage', url, savePath, filename)
+    const resp = await requests.get({
+      url: url,
+      responseType: 'arraybuffer'
+    })
+    // console.log(resp, new Uint8Array(resp.data))
+    const suffix = resp.headers['content-type'].split('/').pop()
+    filename = filename + '.' + suffix
+    const saveFilePath = path.join(savePath, filename)
+    await fs.promises.writeFile(saveFilePath, new Uint8Array(resp.data), 'binary')
+    return saveFilePath
+    // const writer = fs.createWriteStream(saveFilePath)
+    // resp.data.pipe(writer)
+    // return new Promise((resolve, reject) => {
+    //   writer.on('finish', resolve)
+    //   writer.on('error', reject)
+    // }).then(() => {
+    //   return saveFilePath
+    // })
+  },
+
+  genComicName (siteName, comicTitle) {
+    const name = `[${siteName}] ${comicTitle}`
+    const reg = new RegExp('[\\/\\\\:\\*\\?\\"<>\\|\\t]', 'g')
+    return name.replace(reg, '_')
+  },
+
+  async getLocalComicImage (savePath, siteName, comicTitle, chapterTitle, url, index) {
+    // if exists return path, else return null
+    const reg = new RegExp('[\\/\\\\:\\*\\?\\"<>\\|\\t]', 'g')
+    const comicName = this.genComicName(siteName, comicTitle)
+    if (chapterTitle) chapterTitle = chapterTitle.replace(reg, '_')
+
+    let p
+    if (chapterTitle) {
+      p = await this.tryMkdir([savePath, comicName, chapterTitle])
+    } else {
+      p = await this.tryMkdir([savePath, comicName])
+    }
+    const resp = await requests.head({ url: url })
+    // console.log('head', resp)
+    const suffix = resp.headers['content-type'].split('/').pop()
+    const filename = this.paddingZero(index, 5) + '.' + suffix
+    p = path.join(p, filename)
+
+    try {
+      const stat = await fs.promises.lstat(p)
+      if (stat.isFile()) {
+        // console.log('stat', p, stat)
+        if (parseInt(stat.size) === parseInt(resp.headers['content-length'])) return p
+      }
+    } catch (e) {
+      return null
+    }
+  },
+
+  async downloadComicImage (savePath, siteName, comicTitle, chapterTitle, url, index) {
+    const localPath = await this.getLocalComicImage(savePath, siteName, comicTitle, chapterTitle, url, index)
+    if (localPath) {
+      // console.log(`${url} read from local ${localPath}`)
+      return localPath
+    }
+    const reg = new RegExp('[\\/\\\\:\\*\\?\\"<>\\|\\t]', 'g')
+    const comicName = this.genComicName(siteName, comicTitle)
+    if (chapterTitle) chapterTitle = chapterTitle.replace(reg, '_')
+    let p
+    if (chapterTitle) {
+      p = await this.tryMkdir([savePath, comicName, chapterTitle])
+    } else {
+      p = await this.tryMkdir([savePath, comicName])
+    }
+    return this.downloadImage(
+      url,
+      path.resolve(p),
+      this.paddingZero(index, 5)
+    )
+  },
+
+  // TODO 这里应该要加proxy
+  async getLocalComicCover (savePath, siteName, comicTitle, url) {
+    // if exists return path, else return null
+    const comicName = this.genComicName(siteName, comicTitle)
+
+    let p = await this.tryMkdir([savePath, comicName])
+    const resp = await requests.head({ url: url })
+    // console.log('head', resp)
+    const suffix = resp.headers['content-type'].split('/').pop()
+    const filename = 'cover.' + suffix
+    p = path.join(p, filename)
+
+    try {
+      const stat = await fs.promises.lstat(p)
+      if (stat.isFile()) {
+        // console.log('stat', p, stat)
+        if (parseInt(stat.size) === parseInt(resp.headers['content-length'])) return p
+      }
+    } catch (e) {
+      // pass
+    }
+    return null
+  },
+
+  async downloadComicCover (savePath, siteName, comicTitle, url) {
+    const localPath = await this.getLocalComicCover(savePath, siteName, comicTitle, url)
+    if (localPath) {
+      // console.log(`${url} read from local ${localPath}`)
+      return localPath
+    }
+    const comicName = this.genComicName(siteName, comicTitle)
+    let p = await this.tryMkdir([savePath, comicName])
+    return this.downloadImage(
+      url,
+      path.resolve(p),
+      'cover'
+    )
+  },
+
+  async isComicDownloaded (savePath, siteName, comicTitle, chapterTitle) {
+    const reg = new RegExp('[\\/\\\\:\\*\\?\\"<>\\|\\t]', 'g')
+    const comicName = this.genComicName(siteName, comicTitle)
+    if (chapterTitle) chapterTitle = chapterTitle.replace(reg, '_')
+
+    let p
+    if (chapterTitle) {
+      p = path.join(savePath, comicName, chapterTitle)
+    } else {
+      p = path.join(savePath, comicName)
+    }
+
+    try {
+      const stat = await fs.promises.lstat(p)
+      if (stat.isDirectory()) {
+        // 简单判断
+        return true
+      }
+    } catch (e) {
+      return false
+    }
+  },
+
+  paddingZero (num, length) {
+    for (let len = (num + '').length; len < length; len = num.length) {
+      num = '0' + num
+    }
+    return num
   }
 
 }

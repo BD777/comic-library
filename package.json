@@ -58,6 +58,8 @@
   "dependencies": {
     "ant-design-vue": "^1.7.5",
     "axios": "^0.18.0",
+    "cheerio": "^1.0.0-rc.9",
+    "jquery": "^3.6.0",
     "nedb": "^1.8.0",
     "vue": "^2.5.16",
     "vue-electron": "^1.0.6",

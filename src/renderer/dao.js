@@ -1,4 +1,6 @@
 import db from './datastore'
+import { remote } from 'electron'
+import path from 'path'
 
 // 增加索引
 db.tags.promises.ensureIndex({ fieldName: 'tag', unique: true })
@@ -11,16 +13,19 @@ export default {
     return db.tags.promises.find({})
   },
 
-  async insertComic (path, title, author, desc, cover, tags) {
-    await this.insertTags(tags)
+  async insertComic (path, title, author, intro, cover, tagConfig, imageConfig, siteId, idCode) {
+    await this.insertTags(tagConfig.map(tag => tag.name))
     const now = new Date()
     return db.meta.promises.insert({
       path: path,
       title: title,
       author: author,
-      desc: desc,
+      intro: intro,
       cover: cover,
-      tags: tags,
+      tagConfig: tagConfig, // [{ name, url }, ...]
+      imageConfig: imageConfig, // [{ thumbnail, url }, ...]
+      siteId: siteId, // 在线漫画有此二项
+      idCode: idCode,
       insertTime: now,
       updateTime: now
     })
@@ -90,8 +95,10 @@ export default {
   },
 
   async updateComicById (id, comic) {
-    comic.updateTime = new Date()
-    return db.meta.promises.update({ _id: id }, { $set: comic }, {})
+    let _comic = Object.assign({}, comic)
+    delete _comic._id
+    _comic.updateTime = new Date()
+    return db.meta.promises.update({ _id: id }, { $set: _comic }, {})
   },
 
   async getComicSetting (comicId) { // 阅读方式：双页（左右/右左）、单页、滚动，以及双页情况下首页是否空白
@@ -135,12 +142,17 @@ export default {
   },
 
   async updateSiteById (id, site) {
-    delete site._id
-    return db.siteRules.update({ _id: id }, { $set: site })
+    let _site = Object.assign({}, site)
+    delete _site._id
+    return db.siteRules.update({ _id: id }, { $set: _site })
   },
 
   async getSiteRuleByName (name) {
     return db.siteRules.promises.find({ name: name })
+  },
+
+  async getSiteRuleById (siteId) {
+    return db.siteRules.promises.find({ _id: siteId })
   },
 
   async getSiteList () {
@@ -150,6 +162,32 @@ export default {
         else resolve(docs)
       })
     })
+  },
+
+  async deleteSiteById (id) {
+    return db.siteRules.promises.remove({ _id: id }, {})
+  },
+
+  async updateGlobalSetting (setting) {
+    const key = 'global-setting'
+    const data = {
+      key: key,
+      setting: setting
+    }
+    console.log('updateGlobalSetting', data)
+    return db.globalSetting.promises.update({ key: key }, { $set: data }, { upsert: false })
+  },
+
+  async getGlobalSetting () {
+    const key = 'global-setting'
+    const resp = await db.globalSetting.promises.find({ key: key })
+    if (resp.length > 0) {
+      return resp[0].setting
+    } else {
+      return {
+        savePath: path.join(remote.app.getPath('userData'), 'comic-library', 'comic-data')
+      }
+    }
   }
 
 }

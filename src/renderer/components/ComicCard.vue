@@ -1,12 +1,17 @@
 <template>
   <a-card
     hoverable
+    class="comic-card"
+    ref="comic-card"
   >
     <img
+      referrerpolicy="no-referrer"
       slot="cover"
       :alt="comic.title"
-      :src="`file://${comic.cover}`"
+      :src="parseImageUrl(comic.cover)"
       @click="toRead(comic)"
+      class="cover"
+      :height="coverHeight"
     />
     <a-card-meta>
       <template slot="title">
@@ -15,7 +20,7 @@
         </span>
       </template>
       <template slot="description">
-        <span @click="toRead(comic)">{{ comic.desc }}</span>
+        <span @click="toRead(comic)" class="text-line-3">{{ comic.intro }}</span>
       </template>
     </a-card-meta>
     <template v-if="editable || deletable" slot="actions" class="ant-card-actions">
@@ -28,7 +33,10 @@
       </a-popconfirm>
     </template>
 
-    <div style="margin-top: 10px;">
+    <div v-if="comic.author" style="margin-top: 10px">
+      <span>作者：{{ comic.author }}</span>
+    </div>
+    <div v-if="comic.tags && comic.tags.length > 0" style="margin-top: 10px;">
       <a-tag color="green" v-for="tag in comic.tags" :key="tag">
         {{ tag }}
       </a-tag>
@@ -48,10 +56,16 @@ export default {
     deletable: {
       type: Boolean,
       default: false
+    },
+    coverRatio: {
+      type: Number,
+      default: 3 / 4 // = width / height
     }
   },
   data () {
-    return {}
+    return {
+      coverHeight: ''
+    }
   },
   methods: {
     editComic (comic) {
@@ -63,10 +77,15 @@ export default {
     },
     deleteComic (comic) {
       this.$emit('delete', comic)
+    },
+    parseImageUrl (url) {
+      if (url.search('http') === 0) return url
+      else return 'file://' + url
     }
   },
   mounted () {
-
+    // console.log('ComicCard mounted', this.$refs['comic-card'].$el.clientWidth)
+    this.coverHeight = this.$refs['comic-card'].$el.clientWidth / this.coverRatio
   }
 }
 </script>
@@ -85,5 +104,19 @@ export default {
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
+}
+.text-line-3 {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+}
+.cover {
+  width: 100%;
+  object-fit: cover;
+}
+.comic-card {
+
 }
 </style>

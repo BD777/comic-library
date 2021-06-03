@@ -7,6 +7,11 @@ const root = path.join(remote.app.getPath('userData'), 'comic-library')
 console.log(remote.app.getPath('userData'))
 
 var db = {}
+db.globalSetting = new Datastore({ // 设置
+  autoload: true,
+  filename: path.join(root, '/globalSetting.db')
+})
+
 db.meta = new Datastore({ // 漫画信息
   autoload: true,
   filename: path.join(root, '/meta.db')
