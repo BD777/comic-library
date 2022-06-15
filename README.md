@@ -2,11 +2,16 @@
 
 > comic-library，管理本地漫画。当然，也可以拿来看别的图片。
 
+## 2022.06.16 用tauri重做了一个更好看的（自认为），本项目不再更新。
+移步 [imageview](https://github.com/BD777/imageview)
+
+
+-----------
+
 ## 简单演示
 ![image](https://user-images.githubusercontent.com/14173335/118405379-3bdd8180-b6aa-11eb-9919-49a8880092b2.png)
 ![image](https://user-images.githubusercontent.com/14173335/118405404-5dd70400-b6aa-11eb-9de8-0915dca70ae6.png)
 ![image](https://user-images.githubusercontent.com/14173335/118405431-78a97880-b6aa-11eb-8ae7-6e1621e3b759.png)
-
 
 
 ## 简介
